@@ -445,123 +445,6 @@ class FaceMeshTracker:
         return filename
 
 
-# class EyeTrackerController:
-#     def __init__(self, face_tracker: FaceMeshTracker, eye_idx: int = 0):
-#         """
-#         Initialize an EyeTrackerController instance.
-
-#         Args:
-#             face_tracker (FaceTracker): FaceTracker instance.
-#             eye_idx (int, optional): Index of the eye for which to track the gaze. Defaults to 0.
-#                 0 - Left eye
-#                 1 - Right eye
-#         """
-#         self.tracker = face_tracker
-#         self.eye_indices = (
-#             FaceMeshTracker.LEFT_EYE + FaceMeshTracker.LEFT_CENTER_EYE
-#             if eye_idx == 0
-#             else FaceMeshTracker.RIGHT_EYE + FaceMeshTracker.RIGHT_CENTER_EYE
-#         )
-#         self.wScr, self.hScr = autopy.screen.size()
-
-#     def get_eye_region(self, image, landmarks):
-#         """
-#         Returns the eye region of the face.
-
-#         Args:
-#             image (numpy.ndarray): Image on which to draw the landmarks.
-#             landmarks (list): List of face landmarks.
-#         Returns:
-#             numpy.ndarray: Eye region of the face.
-#         """
-#         threshold = 0.1
-#         landmarks = np.array(
-#             [
-#                 (int(landmark.x * image.shape[1]), int(landmark.y * image.shape[0]))
-#                 for landmark in landmarks
-#             ]
-#         )
-#         x, y, w, h = cv2.boundingRect(landmarks)
-
-#         # Plus a threshhold to size of bounding box
-#         x -= int(w * threshold)
-#         y -= int(h * threshold)
-#         w += int(w * threshold * 2)
-#         h += int(h * threshold * 2)
-
-#         return image[y : y + h, x : x + w], (x, y, w, h)
-
-#     def get_eye_region_center(self, eye_region):
-#         rows, cols, _ = eye_region.shape
-#         gray_roi = cv2.cvtColor(eye_region, cv2.COLOR_BGR2GRAY)
-#         gray_roi = cv2.GaussianBlur(gray_roi, (7, 7), 0)
-
-#         gray_roi = cv2.equalizeHist(gray_roi)
-
-#         _, threshold = cv2.threshold(gray_roi, 45, 255, cv2.THRESH_BINARY_INV)
-
-#         contours, _ = cv2.findContours(
-#             threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-#         )
-#         contour = max(contours, key=cv2.contourArea)
-
-#         # Calculate the moments of the largest contour.
-#         moments = cv2.moments(contour)
-
-#         # Calculate the centroid of the iris.
-#         cX = int(moments["m10"] / moments["m00"])
-#         cY = int(moments["m01"] / moments["m00"])
-
-#         # Draw a circle at the center.
-#         cv2.circle(eye_region, (cX, cY), 2, (0, 255, 0), -1)
-
-#         # Draw a horizontal line across the center.
-#         cv2.line(eye_region, (0, cY), (eye_region.shape[1], cY), (0, 255, 0), 1)
-
-#         # Draw a vertical line down the center.
-#         cv2.line(eye_region, (cX, 0), (cX, eye_region.shape[0]), (0, 255, 0), 1)
-
-#         return cX, cY
-
-#     def process(self, image, face_idx=0):
-#         """
-#         Processes the image to detect the eyes.
-
-#         Args:
-#             image (numpy.ndarray): Image on which to draw the landmarks.
-#             face_idx (int, optional): Index of the face for which to return the landmarks. Defaults to 0.
-
-#         Returns:
-#             numpy.ndarray: Processed image.
-#         """
-#         cv2.flip(image, 1, image)
-#         image = self.tracker.detect(image, draw=False)
-#         eye_region = None
-#         face_landmarks = self.tracker.get_face_landmarks(face_idx, self.eye_indices)
-#         if len(face_landmarks) != 0:
-#             eye_region, (x, y, w, h) = self.get_eye_region(image, face_landmarks)
-#             # Draw bounding box around the eye region
-#             eye_region = cv2.resize(
-#                 eye_region, (int(image.shape[1]), int(image.shape[0]))
-#             )
-#             # Get the center of the eye region
-#             eye_center = self.get_eye_region_center(eye_region)
-#             if eye_center is not None:
-#                 print(eye_center)
-#                 cX, cY = eye_center
-
-#                 cX = np.interp(cX, (0, eye_region.shape[1]), (0, self.wScr))
-#                 cY = np.interp(cY, (0, eye_region.shape[0]), (0, self.hScr))
-
-#                 # Move the mouse cursor to the normalized position.
-#                 autopy.mouse.move(cX, cY)
-
-#             cv2.imshow("eye_region", eye_region)
-#             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-#             self.tracker.draw_landmark_circles(image, self.eye_indices)
-#         return image
-
-
 def main():
     tracker = FaceMeshTracker(
         num_faces=1,
@@ -569,7 +452,7 @@ def main():
         min_face_presence_confidence=0.7,
         min_tracking_confidence=0.7,
     )
-    # controller = EyeTrackerController(tracker)
+
     cap = cv2.VideoCapture(0)
 
     while cap.isOpened():

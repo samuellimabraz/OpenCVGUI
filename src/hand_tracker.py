@@ -182,7 +182,7 @@ class HandTracker:
 
         HANDEDNESS_TEXT_COLOR = (88, 205, 54)  # vibrant green
 
-        if self.DETECTION_RESULT:
+        if self.DETECTION_RESULT is not None:
             # Landmark visualization parameters.
             MARGIN = 10  # pixels
             FONT_SIZE = 1

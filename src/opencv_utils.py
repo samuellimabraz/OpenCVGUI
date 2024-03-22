@@ -18,7 +18,7 @@ class OpenCVUtils:
             minTrackCon=0.5,
         )
         self.hand_tracker = HandTracker(
-            num_hands=2,
+            num_hands=1,
             min_hand_detection_confidence=0.5,
             min_hand_presence_confidence=0.5,
             min_tracking_confidence=0.5,
@@ -33,8 +33,10 @@ class OpenCVUtils:
     def detect_faces(self, frame, draw=True):
         return self.face_mesh_tracker.detect(frame, draw=draw)
 
-    def detect_hands(self, frame, draw=False):
-        return self.hand_tracker.detect(frame, draw=draw)
+    def detect_hands(self, frame, draw=True):
+        result = self.hand_tracker.detect(frame, draw=draw)
+        print(self.hand_tracker.get_hand_landmarks(0))
+        return result
 
     def detect_hands_cvzone(self, frame, draw=True):
         _, img = self.hand_detector.findHands(frame, draw=draw, flipType=True)
