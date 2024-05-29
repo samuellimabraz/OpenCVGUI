@@ -1,4 +1,6 @@
 import cv2
+import numpy as np
+import time
 
 from tkinter import *
 from tkinter import ttk
@@ -9,7 +11,7 @@ from opencv_utils import OpenCVUtils
 
 
 class MainWindow:
-    def __init__(self, root):
+    def __init__(self, root: Tk) -> None:
         self.root = root
 
         self.font = ("Arial", 12, "bold")
@@ -23,10 +25,27 @@ class MainWindow:
 
         self.congig_interface()
 
+        self.root.bind("<q>", self.close_application)
+
         self.functions = []
         self.aplication = OpenCVUtils()
+        self.fps_avg_frame_count = 30
 
-    def congig_interface(self):
+        self.COUNTER, self.FPS = 0, 0
+        self.START_TIME = time.time()
+
+    def close_application(self, event) -> None:
+        """
+        Close the application
+
+        :param event: The event that triggered the function
+        """
+        # Libera a webcam e destrói todas as janelas do OpenCV
+        self.cap.release()
+        cv2.destroyAllWindows()
+        self.root.destroy()
+
+    def congig_interface(self) -> None:
         self.root.geometry("1500x1000")
         self.root.title("OpenCV + Tkinter")
         self.root.config(bg=self.colors["black"])
@@ -311,7 +330,7 @@ class MainWindow:
         self.hand_tracker_var.trace_add(
             "write",
             lambda *args: self.add_function(
-                self.aplication.detect_hands_cvzone, self.hand_tracker_var
+                self.aplication.detect_hands, self.hand_tracker_var
             ),
         )
         Checkbutton(
@@ -349,13 +368,25 @@ class MainWindow:
         self.image_label = Label(self.paned_window, bg=self.colors["black"])
         self.paned_window.add(self.image_label)
 
-    def add_function(self, function, var):
+    def add_function(self, function: callable, var: IntVar) -> None:
+        """
+        Add or remove a function from the list of functions to be applied to the image
+
+        :param function: The function to be added or removed
+        :param var: The variable that controls the function
+        """
         if var.get() == 1:
             self.functions.append(function)
         else:
             self.functions.remove(function)
 
-    def process_image(self, frame):
+    def process_image(self, frame: np.ndarray) -> np.ndarray:
+        """
+        Process the image with the functions selected by the user
+
+        :param frame: The image to be processed
+        :return: The processed image
+        """
         function_dict = {
             self.aplication.apply_color_filter: [
                 (
@@ -384,13 +415,16 @@ class MainWindow:
 
         return frame
 
-    def run(self):
+    def run(self) -> None:
+        """
+        Run the main loop of the tkinter application
+        """
         # Abre a webcam
-        cap = cv2.VideoCapture(0)
-
+        self.cap = cv2.VideoCapture(0)
+        self.START_TIME = time.time()
         while True:
             # Lê um frame da webcam
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
             if not ret:
                 break
 
@@ -398,6 +432,25 @@ class MainWindow:
             frame = self.process_image(frame)
 
             output = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            if self.COUNTER % self.fps_avg_frame_count == 0:
+                self.FPS = self.fps_avg_frame_count / (time.time() - self.START_TIME)
+                self.START_TIME = time.time()
+            self.COUNTER += 1
+
+            # Show the FPS
+            fps_text = "FPS = {:.1f}".format(self.FPS)
+
+            cv2.putText(
+                output,
+                fps_text,
+                (24, 30),
+                cv2.FONT_HERSHEY_DUPLEX,
+                1,
+                (0, 0, 0),
+                1,
+                cv2.LINE_AA,
+            )
 
             # Converte a imagem NumPy para uma imagem PIL
             pil_image = Image.fromarray(output)
@@ -412,18 +465,12 @@ class MainWindow:
             # Atualiza a janela tkinter
             self.root.update()
 
-            # Se a tecla 'q' for pressionada, sai do loop
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
-
-        # Libera a webcam e destrói todas as janelas do OpenCV
-        cap.release()
-        cv2.destroyAllWindows()
+            cv2.waitKey(1)
 
 
 def main():
     # Cria a janela principal
-    root = Tk()  # Usar ThemedTk em vez de Tk
+    root = Tk()
     main_window = MainWindow(root)
     main_window.run()
 
