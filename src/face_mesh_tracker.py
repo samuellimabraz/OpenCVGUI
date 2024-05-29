@@ -224,10 +224,6 @@ class FaceMeshTracker:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
-        self.fps_avg_frame_count = 30
-
-        self.COUNTER, self.FPS = 0, 0
-        self.START_TIME = time.time()
         self.DETECTION_RESULT = None
 
     def save_result(
@@ -235,6 +231,7 @@ class FaceMeshTracker:
         result: vision.FaceLandmarkerResult,
         unused_output_image,
         timestamp_ms: int,
+        fps: bool = False,
     ):
         """
         Saves the result of the face detection.
@@ -247,12 +244,7 @@ class FaceMeshTracker:
         Returns:
             None
         """
-        if self.COUNTER % self.fps_avg_frame_count == 0:
-            self.FPS = self.fps_avg_frame_count / (time.time() - self.START_TIME)
-            self.START_TIME = time.time()
-
         self.DETECTION_RESULT = result
-        self.COUNTER += 1
 
     def initialize_detector(
         self,
@@ -305,18 +297,6 @@ class FaceMeshTracker:
         Returns:
             numpy.ndarray: Image with the landmarks drawn.
         """
-        # Show the FPS
-        fps_text = "FPS = {:.1f}".format(self.FPS)
-        cv2.putText(
-            image,
-            fps_text,
-            (24, 30),
-            cv2.FONT_HERSHEY_DUPLEX,
-            font_size,
-            text_color,
-            font_thickness,
-            cv2.LINE_AA,
-        )
 
         if self.DETECTION_RESULT:
             # Draw landmarks.
@@ -431,7 +411,14 @@ class FaceMeshTracker:
             return []
 
     @staticmethod
-    def download_model():
+    def download_model() -> str:
+        """
+        Download the face_landmarker task model from the mediapipe repository.
+            https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task
+
+        Returns:
+            str: Path to the downloaded model.
+        """
         root = os.path.dirname(os.path.realpath(__file__))
         # Unino to res folder
         root = os.path.join(root, "..", "res")
@@ -443,41 +430,3 @@ class FaceMeshTracker:
             urllib.request.urlretrieve(base, filename)
 
         return filename
-
-
-def main():
-    tracker = FaceMeshTracker(
-        num_faces=1,
-        min_face_detection_confidence=0.7,
-        min_face_presence_confidence=0.7,
-        min_tracking_confidence=0.7,
-    )
-
-    cap = cv2.VideoCapture(0)
-
-    while cap.isOpened():
-        success, image = cap.read()
-        if not success:
-            sys.exit(
-                "ERROR: Unable to read from webcam. Please verify your webcam settings."
-            )
-
-        try:
-            # image = controller.process(image)
-            image = tracker.detect(image, draw=True)
-        except Exception as e:
-            print(e)
-            break
-
-        cv2.imshow("hand_landmarker", image)
-
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
-    tracker.detector.close()
-    cap.release()
-    cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()

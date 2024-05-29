@@ -48,18 +48,17 @@ class HandTracker:
         self.mp_hands = mp.solutions.hands
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
-
-        self.fps_avg_frame_count = 30
-
-        self.COUNTER, self.FPS = 0, 0
-        self.START_TIME = time.time()
         self.DETECTION_RESULT = None
 
         self.tipIds = [4, 8, 12, 16, 20]
 
-        # x is the raw distance y is the value in cm
-        # x = [170, 132, 104, 92, 82, 72]
-        # y = [20, 25, 30, 35, 40, 45]
+        self.MARGIN = 10  # pixels
+        self.FONT_SIZE = 1
+        self.FONT_THICKNESS = 1
+        self.HANDEDNESS_TEXT_COLOR = (88, 205, 54)  # vibrant green
+
+        # x is the raw distance, y is the value in cm
+        # This values are used to calculate the approximate depth of the hand
         x = (
             np.array(
                 [
@@ -104,16 +103,7 @@ class HandTracker:
         Returns:
             None
         """
-        if self.COUNTER % self.fps_avg_frame_count == 0:
-            self.FPS = self.fps_avg_frame_count / (time.time() - self.START_TIME)
-            self.START_TIME = time.time()
-
-        if len(result.handedness):
-            self.DETECTION_RESULT = result
-        else:
-            self.DETECTION_RESULT = None
-
-        self.COUNTER += 1
+        self.DETECTION_RESULT = result
 
     def initialize_detector(
         self,
@@ -137,12 +127,12 @@ class HandTracker:
         base_options = python.BaseOptions(model_asset_path=self.model)
         options = vision.HandLandmarkerOptions(
             base_options=base_options,
-            running_mode=vision.RunningMode.LIVE_STREAM,
+            # running_mode=vision.RunningMode.LIVE_STREAM,
             num_hands=num_hands,
             min_hand_detection_confidence=min_hand_detection_confidence,
             min_hand_presence_confidence=min_hand_presence_confidence,
             min_tracking_confidence=min_tracking_confidence,
-            result_callback=self.save_result,
+            # result_callback=self.save_result,
         )
         return vision.HandLandmarker.create_from_options(options)
 
@@ -166,27 +156,9 @@ class HandTracker:
             numpy.ndarray: Image with the landmarks drawn.
         """
 
-        # Show the FPS
-        fps_text = "FPS = {:.1f}".format(self.FPS)
-
-        cv2.putText(
-            image,
-            fps_text,
-            (24, 30),
-            cv2.FONT_HERSHEY_DUPLEX,
-            font_size,
-            text_color,
-            font_thickness,
-            cv2.LINE_AA,
-        )
-
-        HANDEDNESS_TEXT_COLOR = (88, 205, 54)  # vibrant green
-
-        if self.DETECTION_RESULT is not None:
+        if self.DETECTION_RESULT:
             # Landmark visualization parameters.
-            MARGIN = 10  # pixels
-            FONT_SIZE = 1
-            FONT_THICKNESS = 1
+
             # Draw landmarks and indicate handedness.
             for idx in range(len(self.DETECTION_RESULT.hand_landmarks)):
                 hand_landmarks = self.DETECTION_RESULT.hand_landmarks[idx]
@@ -215,7 +187,7 @@ class HandTracker:
                 x_coordinates = [landmark.x for landmark in hand_landmarks]
                 y_coordinates = [landmark.y for landmark in hand_landmarks]
                 text_x = int(min(x_coordinates) * width)
-                text_y = int(min(y_coordinates) * height) - MARGIN
+                text_y = int(min(y_coordinates) * height) - self.MARGIN
 
                 # Draw handedness (left or right hand) on the image.
                 cv2.putText(
@@ -223,9 +195,9 @@ class HandTracker:
                     f"{handedness[0].category_name}",
                     (text_x, text_y),
                     cv2.FONT_HERSHEY_DUPLEX,
-                    FONT_SIZE,
-                    HANDEDNESS_TEXT_COLOR,
-                    FONT_THICKNESS,
+                    self.FONT_SIZE,
+                    self.HANDEDNESS_TEXT_COLOR,
+                    self.FONT_THICKNESS,
                     cv2.LINE_AA,
                 )
 
@@ -242,9 +214,10 @@ class HandTracker:
         Returns:
             numpy.ndarray: Image with the landmarks drawn if draw is True, else the original image.
         """
+
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-        self.detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+        self.DETECTION_RESULT = self.detector.detect(mp_image)
 
         return self.draw_landmarks(frame) if draw else frame
 
@@ -388,7 +361,14 @@ class HandTracker:
         return length, img, [x1, y1, x2, y2, cx, cy]
 
     @staticmethod
-    def download_model():
+    def download_model() -> str:
+        """
+        Downloads the hand landmark model in float16 format from the mediapipe website.
+            https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task
+
+        Returns:
+            str: Path to the downloaded model.
+        """
         root = os.path.dirname(os.path.realpath(__file__))
         # Unino to res folder
         root = os.path.join(root, "..", "res")
