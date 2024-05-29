@@ -58,4 +58,6 @@ python src/main.py
 
 A imagem a seguir demonstra a aplicação das funções de detecção de face, blur, detecção de arestas (Canny) e redimensionamento (resize).
 
+![Screenshot from 2024-05-28 22-06-24](https://github.com/samuellimabraz/OpenCVGUI/assets/115582014/a42995a1-8497-4d87-a735-87f7cf7b5a03)
+
 
