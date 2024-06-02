@@ -4,19 +4,10 @@ import numpy as np
 from hand_tracker import HandTracker
 from face_mesh_tracker import FaceMeshTracker
 
-from cvzone.HandTrackingModule import HandDetector
-
 
 class OpenCVUtils:
 
     def __init__(self) -> None:
-        self.hand_detector = HandDetector(
-            staticMode=False,
-            maxHands=2,
-            modelComplexity=1,
-            detectionCon=0.5,
-            minTrackCon=0.5,
-        )
         self.hand_tracker = HandTracker(
             num_hands=2,
             min_hand_detection_confidence=0.7,
@@ -48,16 +39,6 @@ class OpenCVUtils:
         """
         result = self.hand_tracker.detect(frame, draw=draw)
         return result
-
-    def detect_hands_cvzone(self, frame: np.ndarray, draw: bool = True) -> np.ndarray:
-        """
-        Detect a hand in the frame with the hand detector of cvzone
-
-        :param frame: The frame to detect the hand
-        :param draw: If the output should be drawn
-        """
-        _, img = self.hand_detector.findHands(frame, draw=draw, flipType=True)
-        return img
 
     def apply_color_filter(
         self, frame: np.ndarray, lower_bound: list, upper_bound: list
