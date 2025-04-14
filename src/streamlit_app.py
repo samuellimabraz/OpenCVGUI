@@ -122,6 +122,7 @@ def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
 webrtc_streamer(
     key="opencv-explorer",
     mode=WebRtcMode.SENDRECV,
+    rtc_configuration={"iceServers": [{"urls": ["stun:stun.streamlit.io:3478"]}]},
     video_frame_callback=video_frame_callback,
     media_stream_constraints={"video": True, "audio": False},
     async_processing=True,
