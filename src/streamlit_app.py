@@ -2,10 +2,39 @@ import av
 import cv2
 import numpy as np
 import streamlit as st
+import os
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 from opencv_utils import OpenCVUtils
+from twilio.rest import Client
 
 st.set_page_config(page_title="OpenCV Explorer", page_icon="🎨", layout="wide")
+
+
+def get_ice_servers():
+    """
+    Get ICE servers configuration.
+    For Streamlit Cloud deployment, a TURN server is required in addition to STUN.
+    This function will try to use Twilio's TURN server service if credentials are available,
+    otherwise it falls back to a free STUN server from Google.
+    """
+    try:
+        # Try to get Twilio credentials from environment variables
+        account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+        auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+
+        if account_sid and auth_token:
+            client = Client(account_sid, auth_token)
+            token = client.tokens.create()
+            return token.ice_servers
+        else:
+            st.warning(
+                "Twilio credentials not found. Using free STUN server only, which may not work reliably on Streamlit Cloud."
+            )
+    except Exception as e:
+        st.error(f"Error setting up Twilio TURN servers: {e}")
+
+    # Fallback to Google's free STUN server
+    return [{"urls": ["stun:stun.l.google.com:19302"]}]
 
 
 @st.cache_resource
@@ -122,7 +151,7 @@ def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
 webrtc_streamer(
     key="opencv-explorer",
     mode=WebRtcMode.SENDRECV,
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.streamlit.io:3478"]}]},
+    rtc_configuration={"iceServers": get_ice_servers()},
     video_frame_callback=video_frame_callback,
     media_stream_constraints={"video": True, "audio": False},
     async_processing=True,

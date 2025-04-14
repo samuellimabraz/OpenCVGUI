@@ -1,22 +1,32 @@
-# OpenCV GUI with Gradio and FastRTC
+# OpenCV Explorer
 
-A real-time video processing application that demonstrates various OpenCV functions using a modern web interface.
+A real-time web application for exploring OpenCV filters and transformations using your webcam through Streamlit.
 
 ## Features
 
-- Real-time video streaming with FastRTC
-- Multiple image processing filters and effects:
-  - Color filtering with HSV controls
-  - Edge detection with Canny algorithm
-  - Gaussian blur with adjustable kernel size
-  - Image rotation
-  - Image resizing
-  - Contour detection
-  - Hand tracking using MediaPipe
-  - Face mesh tracking using MediaPipe
-- Order-dependent processing pipeline
-- FPS display
-- User-friendly web interface with Gradio
+- Real-time video processing using WebRTC
+- Multiple image filters and transformations
+- Hand tracking and face mesh detection with MediaPipe
+- Support for both local development and cloud deployment
+
+## Filters and Transformations
+
+- Color filtering with HSV controls
+- Edge detection with Canny algorithm
+- Gaussian blur with adjustable kernel size
+- Image rotation
+- Image resizing
+- Contour detection
+- Histogram equalization
+- Adaptive thresholding
+- Morphological operations
+- Sharpening
+- Hough line detection
+- Optical flow visualization
+- Pencil sketch effect
+- Color quantization
+- Hand tracking
+- Face mesh tracking
 
 ## Installation
 
@@ -33,33 +43,44 @@ A real-time video processing application that demonstrates various OpenCV functi
 
 ## Usage
 
-Run the application with:
+Run the application locally with:
 
 ```bash
-python src/run.py
+python run.py -i streamlit
 ```
 
-By default, this will launch the Stramlit interface. You can specify which interface to use:
+Or directly with Streamlit:
 
 ```bash
-# Launch with Streamlit interface 
-python src/run.py -i stramlit
-
-# Launch with Tkinter interface (default)
-python src/run.py -i tkinter
+streamlit run src/streamlit_app.py
 ```
+
+## Deployment to Streamlit Cloud
+
+When deploying to Streamlit Cloud, you need to configure a TURN server to ensure WebRTC connections work properly. This application uses Twilio's TURN server service. Follow these steps:
+
+1. Create a free Twilio account at [https://www.twilio.com/try-twilio](https://www.twilio.com/try-twilio)
+2. Once you have your account, go to your Twilio Console dashboard
+3. Find your Account SID and Auth Token
+4. Set these values as secrets in your Streamlit Cloud deployment:
+   - Go to your app settings in Streamlit Cloud
+   - Add two secrets:
+     - `TWILIO_ACCOUNT_SID` with your Account SID value
+     - `TWILIO_AUTH_TOKEN` with your Auth Token value
+
+Twilio offers a free trial with a certain amount of credit, which should be sufficient for testing and moderate usage.
 
 ## How It Works
 
 The application captures video from your webcam and applies various OpenCV transformations in real-time based on your selections. The processing is sequential, meaning the order of operations matters - each operation is applied to the result of the previous one.
 
-## Interface
+The WebRTC component ensures low-latency video streaming, making the transformations appear in real-time.
 
-The interface is divided into two main sections:
-- Right: Video display showing the processed feed from your webcam
-- Left: Control panel with various image processing options in collapsible accordions
+## Troubleshooting
 
-Each processing option can be enabled/disabled and configured with sliders and other controls.
+- If you encounter connection issues on Streamlit Cloud, check that your Twilio credentials are correctly set up.
+- If the webcam doesn't start, ensure your browser has permission to access the camera.
+- Some browsers or networks may have restrictive policies that block WebRTC connections. Try a different browser or network if you encounter issues.
 
 ## License
 
