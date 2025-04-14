@@ -6,3 +6,11 @@ __pycache__
 .vscode/
 .vscode/*
 .vscode
+
+.gradio/
+.gradio/*
+.gradio
+
+.streamlit/
+.streamlit/*
+.streamlit

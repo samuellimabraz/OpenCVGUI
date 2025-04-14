@@ -34,6 +34,9 @@ class MainWindow:
         self.COUNTER, self.FPS = 0, 0
         self.START_TIME = time.time()
 
+        # For optical flow
+        self.prev_gray = None
+
     def close_application(self, event) -> None:
         """
         Close the application
@@ -64,6 +67,24 @@ class MainWindow:
         )
         self.paned_window.add(self.sidebar)
 
+        # Create a scrollbar for the sidebar
+        canvas = Canvas(self.sidebar, bg=self.colors["black"], highlightthickness=0)
+        scrollbar = Scrollbar(self.sidebar, orient="vertical", command=canvas.yview)
+        scrollable_frame = Frame(
+            canvas,
+            bg=self.colors["black"],
+        )
+
+        scrollable_frame.bind(
+            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
         # Cria as trackbars
         self.color_filter_var = IntVar()
         self.color_filter_var.trace_add(
@@ -73,7 +94,7 @@ class MainWindow:
             ),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Color Filter",
             variable=self.color_filter_var,
             font=self.font,
@@ -84,7 +105,7 @@ class MainWindow:
         ).pack()
 
         self.lower_hue = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=180,
             orient=HORIZONTAL,
@@ -95,7 +116,7 @@ class MainWindow:
         )
         self.lower_hue.pack(anchor="center")
         self.upper_hue = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=180,
             orient=HORIZONTAL,
@@ -107,7 +128,7 @@ class MainWindow:
         self.upper_hue.pack(anchor="center")
 
         self.lower_saturation = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=255,
             orient=HORIZONTAL,
@@ -118,7 +139,7 @@ class MainWindow:
         )
         self.lower_saturation.pack(anchor="center")
         self.upper_saturation = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=255,
             orient=HORIZONTAL,
@@ -130,7 +151,7 @@ class MainWindow:
         self.upper_saturation.pack(anchor="center")
 
         self.lower_value = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=255,
             orient=HORIZONTAL,
@@ -141,7 +162,7 @@ class MainWindow:
         )
         self.lower_value.pack(anchor="center")
         self.upper_value = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=255,
             orient=HORIZONTAL,
@@ -152,7 +173,7 @@ class MainWindow:
         )
         self.upper_value.pack(anchor="center")
 
-        ttk.Separator(self.sidebar, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
 
         self.canny_var = IntVar()
         self.canny_var.trace_add(
@@ -162,7 +183,7 @@ class MainWindow:
             ),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Canny",
             variable=self.canny_var,
             font=self.font,
@@ -173,7 +194,7 @@ class MainWindow:
         ).pack()
 
         self.lower_canny = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=255,
             orient=HORIZONTAL,
@@ -184,7 +205,7 @@ class MainWindow:
         )
         self.lower_canny.pack(anchor="center")
         self.upper_canny = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=255,
             orient=HORIZONTAL,
@@ -195,7 +216,7 @@ class MainWindow:
         )
         self.upper_canny.pack(anchor="center")
 
-        ttk.Separator(self.sidebar, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
 
         self.blur_var = IntVar()
         self.blur_var.trace_add(
@@ -203,7 +224,7 @@ class MainWindow:
             lambda *args: self.add_function(self.aplication.blur_image, self.blur_var),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Blur",
             variable=self.blur_var,
             font=self.font,
@@ -214,7 +235,7 @@ class MainWindow:
         ).pack(anchor="center")
 
         self.blur = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=1,
             to=15,
             orient=HORIZONTAL,
@@ -224,7 +245,7 @@ class MainWindow:
         )
         self.blur.pack(anchor="center")
 
-        ttk.Separator(self.sidebar, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
 
         self.rotation_var = IntVar()
         self.rotation_var.trace_add(
@@ -234,7 +255,7 @@ class MainWindow:
             ),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Rotation",
             variable=self.rotation_var,
             font=self.font,
@@ -245,7 +266,7 @@ class MainWindow:
         ).pack(anchor="center")
 
         self.rotation_angle = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=0,
             to=360,
             orient=HORIZONTAL,
@@ -256,7 +277,7 @@ class MainWindow:
         )
         self.rotation_angle.pack(anchor="center")
 
-        ttk.Separator(self.sidebar, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
 
         self.resize_var = IntVar()
         self.resize_var.trace_add(
@@ -266,7 +287,7 @@ class MainWindow:
             ),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Resize",
             variable=self.resize_var,
             font=self.font,
@@ -277,13 +298,13 @@ class MainWindow:
         ).pack()
 
         Label(
-            self.sidebar,
+            scrollable_frame,
             text="Height",
             bg=self.colors["black"],
             fg=self.colors["white"],
         ).pack()
         self.height = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=100,
             to=1080,
             orient=HORIZONTAL,
@@ -293,7 +314,7 @@ class MainWindow:
         )
         self.height.pack(anchor="center")
         self.width = Scale(
-            self.sidebar,
+            scrollable_frame,
             from_=100,
             to=1920,
             orient=HORIZONTAL,
@@ -304,7 +325,7 @@ class MainWindow:
         )
         self.width.pack(anchor="center")
 
-        ttk.Separator(self.sidebar, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
 
         self.contour_var = IntVar()
         self.contour_var.trace_add(
@@ -314,7 +335,7 @@ class MainWindow:
             ),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Contour",
             variable=self.contour_var,
             font=self.font,
@@ -324,7 +345,201 @@ class MainWindow:
             selectcolor=self.colors["black"],
         ).pack()
 
-        ttk.Separator(self.sidebar, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+        # Add new OpenCV functions
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.hist_equal_var = IntVar()
+        self.hist_equal_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.aplication.equalize_histogram, self.hist_equal_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Histogram Equalization",
+            variable=self.hist_equal_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.adaptive_threshold_var = IntVar()
+        self.adaptive_threshold_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.aplication.adaptive_threshold, self.adaptive_threshold_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Adaptive Threshold",
+            variable=self.adaptive_threshold_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.morphology_var = IntVar()
+        self.morphology_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.aplication.morphology, self.morphology_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Morphology",
+            variable=self.morphology_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        # Morphology operation options
+        self.morph_op_var = StringVar(value="erode")
+        Label(
+            scrollable_frame,
+            text="Operation",
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+        ).pack()
+
+        for op in ["erode", "dilate", "open", "close"]:
+            Radiobutton(
+                scrollable_frame,
+                text=op.capitalize(),
+                variable=self.morph_op_var,
+                value=op,
+                bg=self.colors["black"],
+                fg=self.colors["white"],
+                selectcolor=self.colors["black"],
+                highlightbackground=self.colors["black"],
+            ).pack(anchor="w")
+
+        self.morph_kernel_size = Scale(
+            scrollable_frame,
+            from_=1,
+            to=31,
+            orient=HORIZONTAL,
+            label="Kernel Size",
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+        )
+        self.morph_kernel_size.set(5)
+        self.morph_kernel_size.pack(anchor="center")
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.sharpen_var = IntVar()
+        self.sharpen_var.trace_add(
+            "write",
+            lambda *args: self.add_function(self.aplication.sharpen, self.sharpen_var),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Sharpen",
+            variable=self.sharpen_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.hough_lines_var = IntVar()
+        self.hough_lines_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.aplication.hough_lines, self.hough_lines_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Hough Lines",
+            variable=self.hough_lines_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.optical_flow_var = IntVar()
+        self.optical_flow_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.process_optical_flow, self.optical_flow_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Optical Flow",
+            variable=self.optical_flow_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.pencil_sketch_var = IntVar()
+        self.pencil_sketch_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.aplication.pencil_sketch, self.pencil_sketch_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Pencil Sketch",
+            variable=self.pencil_sketch_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        self.color_quantization_var = IntVar()
+        self.color_quantization_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.aplication.color_quantization, self.color_quantization_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="Color Quantization",
+            variable=self.color_quantization_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
 
         self.hand_tracker_var = IntVar()
         self.hand_tracker_var.trace_add(
@@ -334,7 +549,7 @@ class MainWindow:
             ),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Hand Tracker",
             variable=self.hand_tracker_var,
             font=self.font,
@@ -344,7 +559,7 @@ class MainWindow:
             selectcolor=self.colors["black"],
         ).pack()
 
-        ttk.Separator(self.sidebar, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
 
         self.face_tracker_var = IntVar()
         self.face_tracker_var.trace_add(
@@ -354,7 +569,7 @@ class MainWindow:
             ),
         )
         Checkbutton(
-            self.sidebar,
+            scrollable_frame,
             text="Face Tracker",
             variable=self.face_tracker_var,
             font=self.font,
@@ -379,6 +594,21 @@ class MainWindow:
             self.functions.append(function)
         else:
             self.functions.remove(function)
+
+    def process_optical_flow(self, frame: np.ndarray) -> np.ndarray:
+        """
+        Special handler for optical flow which needs to track previous frames
+
+        :param frame: The current frame
+        :return: The processed frame with optical flow
+        """
+        curr_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        if self.prev_gray is not None:
+            frame = self.aplication.optical_flow(self.prev_gray, curr_gray, frame)
+
+        self.prev_gray = curr_gray
+        return frame
 
     def process_image(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -407,6 +637,10 @@ class MainWindow:
             self.aplication.blur_image: [self.blur.get()],
             self.aplication.rotate_image: [self.rotation_angle.get()],
             self.aplication.resize_image: [self.width.get(), self.height.get()],
+            self.aplication.morphology: [
+                self.morph_op_var.get(),
+                self.morph_kernel_size.get(),
+            ],
         }
 
         for function in self.functions:

@@ -1,6 +1,9 @@
-mediapipe==0.10.8
-numpy==1.24.4
-opencv_contrib_python==4.9.0.80
-opencv_python==4.9.0.80
-opencv_python_headless==4.8.0.74
-Pillow==9.0.1
+gradio
+fastrtc
+opencv-python-headless
+mediapipe
+numpy
+
+# You might need these depending on your OS/environment
+# pytesseract # Add if using OCR functions, needs tesseract-ocr installed system-wide
+# Pillow # Usually a dependency of gradio/opencv, but good to list explicitly

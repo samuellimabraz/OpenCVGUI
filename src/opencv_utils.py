@@ -130,3 +130,117 @@ class OpenCVUtils:
             dim = (width, int(h * r))
 
         return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+
+    def pencil_sketch(
+        self,
+        image: np.ndarray,
+        sigma_s: int = 60,
+        sigma_r: float = 0.07,
+        shade_factor: float = 0.05,
+    ) -> np.ndarray:
+        # Converte para sketch preto e branco
+        gray, sketch = cv2.pencilSketch(
+            image, sigma_s=sigma_s, sigma_r=sigma_r, shade_factor=shade_factor
+        )
+        return sketch
+
+    def stylization(
+        self, image: np.ndarray, sigma_s: int = 60, sigma_r: float = 0.45
+    ) -> np.ndarray:
+        # Efeito de pintura estilizada
+        return cv2.stylization(image, sigma_s=sigma_s, sigma_r=sigma_r)
+
+    def cartoonify(self, image: np.ndarray) -> np.ndarray:
+        # Cartoon: detecta bordas e aplica quantização de cores
+        # 1) Detecção de bordas
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        blur = cv2.medianBlur(gray, 7)
+        edges = cv2.adaptiveThreshold(
+            blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 2
+        )
+        # 2) Redução de cores
+        data = np.float32(image).reshape((-1, 3))
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 0.001)
+        _, label, center = cv2.kmeans(
+            data, 8, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
+        )
+        center = np.uint8(center)
+        quant = center[label.flatten()].reshape(image.shape)
+        # Combina bordas e quantização
+        cartoon = cv2.bitwise_and(quant, quant, mask=edges)
+        return cartoon
+
+    def color_quantization(self, image: np.ndarray, k: int = 8) -> np.ndarray:
+        # Reduz o número de cores via k-means
+        data = np.float32(image).reshape((-1, 3))
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 0.001)
+        _, label, center = cv2.kmeans(
+            data, k, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
+        )
+        center = np.uint8(center)
+        quant = center[label.flatten()].reshape(image.shape)
+        return quant
+
+    def equalize_histogram(self, image: np.ndarray) -> np.ndarray:
+        ycrcb = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
+        channels = cv2.split(ycrcb)
+        cv2.equalizeHist(channels[0], channels[0])
+        merged = cv2.merge(channels)
+        return cv2.cvtColor(merged, cv2.COLOR_YCrCb2BGR)
+
+    def adaptive_threshold(self, image: np.ndarray) -> np.ndarray:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        return cv2.cvtColor(
+            cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                  cv2.THRESH_BINARY, 11, 2),
+            cv2.COLOR_GRAY2BGR)
+
+    def morphology(self, image: np.ndarray, op: str = 'erode', ksize: int = 5) -> np.ndarray:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (ksize, ksize))
+        ops = {
+            'erode': cv2.erode,
+            'dilate': cv2.dilate,
+            'open': cv2.morphologyEx,
+            'close': cv2.morphologyEx
+        }
+        if op in ['open', 'close']:
+            flag = cv2.MORPH_OPEN if op == 'open' else cv2.MORPH_CLOSE
+            return ops[op](image, flag, kernel)
+        return ops[op](image, kernel)
+
+    def sharpen(self, image: np.ndarray) -> np.ndarray:
+        kernel = np.array([[0, -1, 0],
+                           [-1, 5, -1],
+                           [0, -1, 0]])
+        return cv2.filter2D(image, -1, kernel)
+
+    def hough_lines(self, image: np.ndarray) -> np.ndarray:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(gray, 50, 150)
+        lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50,
+                                minLineLength=50, maxLineGap=10)
+        if lines is not None:
+            for x1, y1, x2, y2 in lines[:,0]:
+                cv2.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        return image
+
+    def hough_circles(self, image: np.ndarray) -> np.ndarray:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, dp=1.2,
+                                   minDist=50, param1=50, param2=30,
+                                   minRadius=5, maxRadius=100)
+        if circles is not None:
+            circles = np.uint16(np.around(circles))
+            for x, y, r in circles[0, :]:
+                cv2.circle(image, (x, y), r, (0, 255, 0), 2)
+        return image
+
+    def optical_flow(self, prev_gray: np.ndarray, curr_gray: np.ndarray, image: np.ndarray) -> np.ndarray:
+        flow = cv2.calcOpticalFlowFarneback(prev_gray, curr_gray, None,
+                                            0.5, 3, 15, 3, 5, 1.2, 0)
+        mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+        hsv = np.zeros_like(image)
+        hsv[...,1] = 255
+        hsv[...,0] = ang * 180 / np.pi / 2
+        hsv[...,2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)

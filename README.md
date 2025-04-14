@@ -1,63 +1,68 @@
-# OpenCVGUI
+# OpenCV GUI with Gradio and FastRTC
 
-Uma interface simples desenvolvida em Python com Tkinter demonstrando metodos comuns da biblioteca OpenCV
+A real-time video processing application that demonstrates various OpenCV functions using a modern web interface.
 
-## Funcionalidades
+## Features
 
-A interface permite ativar e configurar uma série de funções de processamento de imagem, que podem ser combinadas sequencialmente de maneira dinâmica.
+- Real-time video streaming with FastRTC
+- Multiple image processing filters and effects:
+  - Color filtering with HSV controls
+  - Edge detection with Canny algorithm
+  - Gaussian blur with adjustable kernel size
+  - Image rotation
+  - Image resizing
+  - Contour detection
+  - Hand tracking using MediaPipe
+  - Face mesh tracking using MediaPipe
+- Order-dependent processing pipeline
+- FPS display
+- User-friendly web interface with Gradio
 
-Todos os metodos de processamento estão contidos na classe [OpenCVUtils](/src/opencv_utils.py), que inclui:
+## Installation
 
-- **Detecção de Face**: Utiliza o modelo [Face Mesh](/src/face_mesh_tracker.py) do mediapipe para detecção de 478 landmarks faciais
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/OpenCVGUI.git
+   cd OpenCVGUI
+   ```
 
-- **Detecção de Mão**: Utiliza o modelo [Hand Landmarker](/src/hand_tracker.py) do mediapipe para detecção de mãos
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- **Filtro de cor**: Permite a configuração dos limites de cor HSV para a criação de uma máscara.
+## Usage
 
-- **Detecção de Arestas**: Utiliza o metodo Canny com os limites inferior e superior.
-
-- **Detecção de Contorno**: Utiliza o método findContours aplicado ao frame em escala de cinza com threshold.
-
-- **Blur**: Aplica o método GaussianBlur com um kernel definido.
-
-- **Rotação**: Permite a rotação da imagem em um ângulo específico.
-
-- **Resize**: Permite alterar a altura e largura da imagem.
-
-## Uso
-Para utilizar o projeto, siga os passos abaixo:
-
-Clone o repositório:
-
-```bash
-git clone https://github.com/Black-Bee-Drones/OpenCVGUI.git
-```
-
-Certifique-se de ter o Python instalado e instale as dependências necessárias:
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-Execute o script main.py:
+Run the application with:
 
 ```bash
-python src/main.py
+python src/run.py
 ```
 
-## Observações
+By default, this will launch the Stramlit interface. You can specify which interface to use:
 
-- Caso obtenha erro com os arquivos [.task](/res/), tente verificar as permissões dos arquivos:
+```bash
+# Launch with Streamlit interface 
+python src/run.py -i stramlit
 
-    ```bash
-    chmod +x res/hand_landamarker.task
-    ```
-    Ou exclua-os e execute o código novamente, o que fará o download dos arquivos novamente.
+# Launch with Tkinter interface (default)
+python src/run.py -i tkinter
+```
 
-## Demonstração
+## How It Works
 
-A imagem a seguir demonstra a aplicação das funções de detecção de face, blur, detecção de arestas (Canny) e redimensionamento (resize).
+The application captures video from your webcam and applies various OpenCV transformations in real-time based on your selections. The processing is sequential, meaning the order of operations matters - each operation is applied to the result of the previous one.
 
-![Screenshot from 2024-05-28 22-06-24](https://github.com/samuellimabraz/OpenCVGUI/assets/115582014/a42995a1-8497-4d87-a735-87f7cf7b5a03)
+## Interface
+
+The interface is divided into two main sections:
+- Right: Video display showing the processed feed from your webcam
+- Left: Control panel with various image processing options in collapsible accordions
+
+Each processing option can be enabled/disabled and configured with sliders and other controls.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 
