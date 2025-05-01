@@ -21,6 +21,27 @@ class OpenCVUtils:
             min_tracking_confidence=0.7,
         )
 
+        # Initialize ArUco dictionaries
+        self.aruco_dicts = {
+            "DICT_4X4_50": cv2.aruco.DICT_4X4_50,
+            "DICT_4X4_100": cv2.aruco.DICT_4X4_100,
+            "DICT_4X4_250": cv2.aruco.DICT_4X4_250,
+            "DICT_4X4_1000": cv2.aruco.DICT_4X4_1000,
+            "DICT_5X5_50": cv2.aruco.DICT_5X5_50,
+            "DICT_5X5_100": cv2.aruco.DICT_5X5_100,
+            "DICT_5X5_250": cv2.aruco.DICT_5X5_250,
+            "DICT_5X5_1000": cv2.aruco.DICT_5X5_1000,
+            "DICT_6X6_50": cv2.aruco.DICT_6X6_50,
+            "DICT_6X6_100": cv2.aruco.DICT_6X6_100,
+            "DICT_6X6_250": cv2.aruco.DICT_6X6_250,
+            "DICT_6X6_1000": cv2.aruco.DICT_6X6_1000,
+            "DICT_7X7_50": cv2.aruco.DICT_7X7_50,
+            "DICT_7X7_100": cv2.aruco.DICT_7X7_100,
+            "DICT_7X7_250": cv2.aruco.DICT_7X7_250,
+            "DICT_7X7_1000": cv2.aruco.DICT_7X7_1000,
+            "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
+        }
+
     def detect_faces(self, frame: np.ndarray, draw: bool = True) -> np.ndarray:
         """
         Detect a face in the frame with the face mesh tracker of mediapipe
@@ -39,6 +60,59 @@ class OpenCVUtils:
         """
         result = self.hand_tracker.detect(frame, draw=draw)
         return result
+
+    def detect_aruco_markers(
+        self, frame: np.ndarray, dict_type: str = "DICT_6X6_250", draw: bool = True
+    ) -> np.ndarray:
+        """
+        Detect ArUco markers in the frame
+
+        :param frame: The frame to detect ArUco markers
+        :param dict_type: The ArUco dictionary type to use for detection
+        :param draw: If the detected markers should be drawn on the frame
+        :return: The frame with detected ArUco markers drawn (if draw=True)
+        """
+        # Create a copy of the frame to avoid modifying the original
+        output = frame.copy()
+
+        # Convert the image to grayscale
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Get the ArUco dictionary
+
+        aruco_dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, dict_type))
+
+        # Set the detection parameters (using default values)
+        parameters = cv2.aruco.DetectorParameters()
+
+        # Detect ArUco markers
+        corners, ids, rejected = cv2.aruco.detectMarkers(
+            gray, aruco_dict, parameters=parameters
+        )
+
+        # If markers are detected and draw is True
+        if draw and ids is not None:
+            # Draw the detected markers
+            cv2.aruco.drawDetectedMarkers(output, corners, ids)
+
+            # For each marker, draw additional information
+            for i, corner in enumerate(corners):
+                # Get the center of the marker
+                c = corner[0]
+                center = (int(c[:, 0].mean()), int(c[:, 1].mean()))
+
+                # Draw the marker ID
+                cv2.putText(
+                    output,
+                    f"ID: {ids[i][0]}",
+                    (center[0], center[1] - 15),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    2,
+                )
+
+        return output
 
     def apply_color_filter(
         self, frame: np.ndarray, lower_bound: list, upper_bound: list
@@ -191,56 +265,69 @@ class OpenCVUtils:
     def adaptive_threshold(self, image: np.ndarray) -> np.ndarray:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         return cv2.cvtColor(
-            cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                  cv2.THRESH_BINARY, 11, 2),
-            cv2.COLOR_GRAY2BGR)
+            cv2.adaptiveThreshold(
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+            ),
+            cv2.COLOR_GRAY2BGR,
+        )
 
-    def morphology(self, image: np.ndarray, op: str = 'erode', ksize: int = 5) -> np.ndarray:
+    def morphology(
+        self, image: np.ndarray, op: str = "erode", ksize: int = 5
+    ) -> np.ndarray:
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (ksize, ksize))
         ops = {
-            'erode': cv2.erode,
-            'dilate': cv2.dilate,
-            'open': cv2.morphologyEx,
-            'close': cv2.morphologyEx
+            "erode": cv2.erode,
+            "dilate": cv2.dilate,
+            "open": cv2.morphologyEx,
+            "close": cv2.morphologyEx,
         }
-        if op in ['open', 'close']:
-            flag = cv2.MORPH_OPEN if op == 'open' else cv2.MORPH_CLOSE
+        if op in ["open", "close"]:
+            flag = cv2.MORPH_OPEN if op == "open" else cv2.MORPH_CLOSE
             return ops[op](image, flag, kernel)
         return ops[op](image, kernel)
 
     def sharpen(self, image: np.ndarray) -> np.ndarray:
-        kernel = np.array([[0, -1, 0],
-                           [-1, 5, -1],
-                           [0, -1, 0]])
+        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
         return cv2.filter2D(image, -1, kernel)
 
     def hough_lines(self, image: np.ndarray) -> np.ndarray:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray, 50, 150)
-        lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50,
-                                minLineLength=50, maxLineGap=10)
+        lines = cv2.HoughLinesP(
+            edges, 1, np.pi / 180, threshold=50, minLineLength=50, maxLineGap=10
+        )
         if lines is not None:
-            for x1, y1, x2, y2 in lines[:,0]:
+            for x1, y1, x2, y2 in lines[:, 0]:
                 cv2.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
         return image
 
     def hough_circles(self, image: np.ndarray) -> np.ndarray:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, dp=1.2,
-                                   minDist=50, param1=50, param2=30,
-                                   minRadius=5, maxRadius=100)
+        circles = cv2.HoughCircles(
+            gray,
+            cv2.HOUGH_GRADIENT,
+            dp=1.2,
+            minDist=50,
+            param1=50,
+            param2=30,
+            minRadius=5,
+            maxRadius=100,
+        )
         if circles is not None:
             circles = np.uint16(np.around(circles))
             for x, y, r in circles[0, :]:
                 cv2.circle(image, (x, y), r, (0, 255, 0), 2)
         return image
 
-    def optical_flow(self, prev_gray: np.ndarray, curr_gray: np.ndarray, image: np.ndarray) -> np.ndarray:
-        flow = cv2.calcOpticalFlowFarneback(prev_gray, curr_gray, None,
-                                            0.5, 3, 15, 3, 5, 1.2, 0)
-        mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+    def optical_flow(
+        self, prev_gray: np.ndarray, curr_gray: np.ndarray, image: np.ndarray
+    ) -> np.ndarray:
+        flow = cv2.calcOpticalFlowFarneback(
+            prev_gray, curr_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
+        )
+        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
         hsv = np.zeros_like(image)
-        hsv[...,1] = 255
-        hsv[...,0] = ang * 180 / np.pi / 2
-        hsv[...,2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        hsv[..., 1] = 255
+        hsv[..., 0] = ang * 180 / np.pi / 2
+        hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
         return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
