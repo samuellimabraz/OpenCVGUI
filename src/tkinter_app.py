@@ -579,6 +579,67 @@ class MainWindow:
             selectcolor=self.colors["black"],
         ).pack()
 
+        ttk.Separator(scrollable_frame, orient=HORIZONTAL).pack(fill=X, padx=3, pady=3)
+
+        # Add ArUco Marker Detector
+        self.aruco_marker_var = IntVar()
+        self.aruco_marker_var.trace_add(
+            "write",
+            lambda *args: self.add_function(
+                self.detect_aruco_markers, self.aruco_marker_var
+            ),
+        )
+        Checkbutton(
+            scrollable_frame,
+            text="ArUco Marker Detector",
+            variable=self.aruco_marker_var,
+            font=self.font,
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+            highlightbackground=self.colors["black"],
+            selectcolor=self.colors["black"],
+        ).pack()
+
+        # ArUco dictionary selector
+        Label(
+            scrollable_frame,
+            text="ArUco Dictionary",
+            bg=self.colors["black"],
+            fg=self.colors["white"],
+        ).pack()
+
+        self.aruco_dict_var = StringVar(value="DICT_6X6_250")
+        aruco_dicts = [
+            "DICT_4X4_50",
+            "DICT_4X4_100",
+            "DICT_4X4_250",
+            "DICT_4X4_1000",
+            "DICT_5X5_50",
+            "DICT_5X5_100",
+            "DICT_5X5_250",
+            "DICT_5X5_1000",
+            "DICT_6X6_50",
+            "DICT_6X6_100",
+            "DICT_6X6_250",
+            "DICT_6X6_1000",
+            "DICT_7X7_50",
+            "DICT_7X7_100",
+            "DICT_7X7_250",
+            "DICT_7X7_1000",
+            "DICT_ARUCO_ORIGINAL",
+        ]
+
+        # Create a combobox for selecting dictionary
+        aruco_dict_combo = ttk.Combobox(
+            scrollable_frame,
+            textvariable=self.aruco_dict_var,
+            values=aruco_dicts,
+            state="readonly",
+            width=20,
+        )
+        aruco_dict_combo.pack(pady=5)
+        aruco_dict_combo.current(10)  # Default to DICT_6X6_250
+
         # Cria o label para exibir a imagem
         self.image_label = Label(self.paned_window, bg=self.colors["black"])
         self.paned_window.add(self.image_label)
@@ -594,6 +655,17 @@ class MainWindow:
             self.functions.append(function)
         else:
             self.functions.remove(function)
+
+    def detect_aruco_markers(self, frame: np.ndarray) -> np.ndarray:
+        """
+        Wrapper for ArUco marker detection to pass the dictionary type parameter
+
+        :param frame: The frame to detect ArUco markers
+        :return: The frame with detected ArUco markers
+        """
+        return self.aplication.detect_aruco_markers(
+            frame, dict_type=self.aruco_dict_var.get()
+        )
 
     def process_optical_flow(self, frame: np.ndarray) -> np.ndarray:
         """
