@@ -1,15 +1,16 @@
 # OpenCV Explorer
 
-A versatile application for exploring OpenCV filters and transformations using your webcam, available with both Streamlit web interface and Tkinter desktop interface.
+A versatile application for exploring OpenCV filters and transformations using your webcam, available with Streamlit web interface, Tkinter desktop interface, and a modern PySide6 (Qt6) desktop interface.
 
 ## Features
 
-- Real-time video processing with WebRTC (Streamlit) and native camera capture (Tkinter)
+- Real-time video processing with WebRTC (Streamlit), native camera capture (Tkinter), and Qt6 (PySide6)
 - Multiple image filters and transformations
 - Hand tracking and face mesh detection with MediaPipe
 - Support for both local development and cloud deployment
 - ArUco marker detection with multiple dictionary options
 - Easy-to-use UI with adjustable parameters for each filter
+- **Modern Qt6 interface** with collapsible sections, smooth animations, and a beautiful dark theme
 
 ## Filters and Transformations
 
@@ -48,6 +49,33 @@ A versatile application for exploring OpenCV filters and transformations using y
    ```
 
 ## Usage
+
+### PySide6 (Qt6) Desktop Interface (Recommended)
+
+Run the modern Qt6 interface:
+
+```bash
+python run.py -i pyside6
+```
+
+Or using the alias:
+
+```bash
+python run.py -i qt
+```
+
+Or directly:
+
+```bash
+python src/pyside6_app.py
+```
+
+The PySide6 interface features:
+- Modern dark theme with teal accents
+- Collapsible filter sections for better organization
+- Smooth slider controls with real-time value display
+- Responsive layout with adjustable splitter
+- High-performance video rendering
 
 ### Streamlit Web Interface
 
@@ -118,6 +146,8 @@ The application includes support for detecting ArUco markers, which are useful f
 - If the webcam doesn't start, ensure your browser has permission to access the camera.
 - Some browsers or networks may have restrictive policies that block WebRTC connections. Try a different browser or network if you encounter issues.
 - For Tkinter interface, press 'q' to exit the application.
+- For PySide6 interface, close the window normally or press Ctrl+Q to exit.
+- If PySide6 fails to start, ensure you have Qt6 libraries installed: `pip install PySide6`
 
 ## License
 

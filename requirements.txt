@@ -6,3 +6,4 @@ streamlit==1.41.1
 streamlit-webrtc==0.62.4
 Pillow==11.2.1
 twilio~=9.4.3
+PySide6>=6.6.0
